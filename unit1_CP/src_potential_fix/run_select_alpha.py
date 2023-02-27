@@ -62,19 +62,29 @@ def calc_per_word_log_evidence(estimator, word_list):
     '''
     assert isinstance(estimator, PosteriorPredictiveEstimator)
 
-    # TODO Fit the estimator to the words
-    # TODO Calculate the log evidence using provided formulas in CP1 spec
-    log_evidence = 0.0
+    # fit the estimator to the words
+    estimator.fit(word_list)
+    # Calculate the log evidence using provided formulas in CP1 spec
+    num_sum = 0
+    denom_sum = 0
+    for index in range(0, estimator.vocab.size - 1):
+        num_sum = num_sum + gammaln(estimator.count_V[index] + estimator.alpha)
+        denom_sum = denom_sum + gammaln(estimator.alpha)
+
+    numerator = gammaln(estimator.vocab.size * estimator.alpha) + num_sum
+    denominator = gammaln(float(len(word_list)) + (estimator.vocab.size * estimator.alpha)) + denom_sum
+    log_evidence = numerator - denominator
 
     # Return the per word log evidence
     return log_evidence / float(len(word_list))
+
 
 if __name__ == '__main__':
     # Load list of all filenames from 1945-Truman.txt to 2016-Obama.txt
     data_fpaths = [fpath for fpath in sorted(
         glob.glob("../state_of_union_1945-2016/*.txt"))]
 
-    train_fpaths = data_fpaths[:-1] # train on prev speeches
+    train_fpaths = data_fpaths[:-1]  # train on prev speeches
     test_fpaths = data_fpaths[-1:]  # test on last year of Obama's 2nd term
     print("Testing on:")
     for f in test_fpaths:
@@ -94,7 +104,7 @@ if __name__ == '__main__':
     prng.shuffle(train_word_list)
 
     # Make list of train-set sizes we will assess
-    frac_train_list = [1./128, 1./16, 1.]
+    frac_train_list = [1. / 128, 1. / 16, 1.]
     n_train_list = [int(np.ceil(frac * len(train_word_list)))
                     for frac in frac_train_list]
 
@@ -108,12 +118,18 @@ if __name__ == '__main__':
     for nn, N in enumerate(n_train_list):
         print("Evaluating with N = %d ..." % (N))
 
-        train_log_ev_list = -8.5 + np.zeros_like(alpha_list)
-        test_log_lik_list = -8.0 + np.zeros_like(alpha_list)
+        train_log_ev_list = np.zeros_like(alpha_list)
+        test_log_lik_list = np.zeros_like(alpha_list)
 
-        # TODO fit an estimator to each alpha value
-        # TODO evaluate training set's log evidence at each alpha value
-        # TODO evaluate test set's estimated probability via estimator's 'score'
+        i = 0
+        for alpha in alpha_list:
+            # fit an estimator to each alpha value
+            est = PosteriorPredictiveEstimator(vocab, alpha=alpha)
+            # evaluate training set's log evidence at each alpha value
+            train_log_ev_list[i] = calc_per_word_log_evidence(est, train_word_list[0:N])
+            # evaluate test set's estimated probability via estimator's 'score'
+            test_log_lik_list[i] = est.score(test_word_list)
+            i += 1
 
         best_ii_test = np.argmax(test_log_lik_list)
         best_ii_train = np.argmax(train_log_ev_list)
@@ -122,9 +138,9 @@ if __name__ == '__main__':
 
         arange_list = np.arange(len(alpha_list))
         ax_grid[nn].plot(arange_list, test_log_lik_list, 'b.-',
-            label=r'test log lik.: best $\alpha$ = %.2f' % best_alpha_test)
+                         label=r'test log lik.: best $\alpha$ = %.2f' % best_alpha_test)
         ax_grid[nn].plot(arange_list, train_log_ev_list, 'k.-',
-            label=r'train log ev.: best $\alpha$ = %.2f' % best_alpha_ev)
+                         label=r'train log ev.: best $\alpha$ = %.2f' % best_alpha_ev)
 
         ax_grid[nn].legend(loc="lower left")
 
@@ -134,9 +150,9 @@ if __name__ == '__main__':
         ax_grid[nn].set_title('train size N = %d' % N)
         ax_grid[nn].set_ylim([-10.1, -6.6])
 
-        # TODO add appropriate labels
-        ax_grid[nn].set_xlabel('TODO label x axis')
+        # add appropriate labels
+        ax_grid[nn].set_xlabel('alpha')
         if nn == 0:
-            ax_grid[nn].set_ylabel('TODO label y axis')
+            ax_grid[nn].set_ylabel('log score')
     plt.tight_layout()
     plt.show()

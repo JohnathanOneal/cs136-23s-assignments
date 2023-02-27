@@ -78,6 +78,11 @@ class PosteriorPredictiveEstimator():
         self.total_count = 0
         # TODO update total_count
         # TODO update the count_V array
+        self.total_count = len(word_list)
+
+        for word in word_list:
+            index = self.vocab.get_word_id(word)
+            self.count_V[index] += 1
 
     def predict_proba(self, word):
         ''' Predict probability of a given unigram under this model
@@ -97,8 +102,10 @@ class PosteriorPredictiveEstimator():
         ------
         KeyError if the provided word is not in the vocabulary
         '''
-        # TODO calculate estimated proba of the provided word
-        return 1.0 / self.vocab.size  # TODO change this placeholder!
+        # calculate estimated proba of the provided word
+        nv = self.count_V[self.vocab.get_word_id(word)]
+        prob = (nv + self.alpha) / (self.total_count + (self.vocab.size * self.alpha))
+        return prob
 
     def score(self, word_list):
         ''' Compute the average log probability of words in provided list

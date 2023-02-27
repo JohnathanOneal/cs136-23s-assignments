@@ -76,8 +76,12 @@ class MAPEstimator():
         '''
         self.count_V = np.zeros(self.vocab.size)
         self.total_count = 0
-        # TODO update total_count
-        # TODO update the count_V array
+
+        self.total_count = len(word_list)
+
+        for word in word_list:
+            index = self.vocab.get_word_id(word)
+            self.count_V[index] += 1
 
     def predict_proba(self, word):
         ''' Predict probability of a given unigram under this model
@@ -98,12 +102,15 @@ class MAPEstimator():
         ValueError if hyperparameters do not allow MAP estimation
         KeyError if the provided word is not in the vocabulary
         '''
-        # TODO adjust if condition to avoid cases where valid MAP does not exist
-        if False:
+        # condition to avoid cases where valid MAP does not exist
+        if self.alpha < 1:
             raise ValueError(
                 "Hyperparameter alpha does not yield valid MAP estimate")
-        # TODO calculate MAP estimate of the provided word
-        return 1.0 / self.vocab.size  # TODO change this placeholder!
+        # calculate MAP estimate of the provided word
+        index = self.vocab.get_word_id(word)
+        u_map = (self.count_V[index] + self.alpha - 1)/(self.total_count + (self.vocab.size * (self.alpha - 1)))
+
+        return u_map
 
     def score(self, word_list):
         ''' Compute the average log probability of words in provided list

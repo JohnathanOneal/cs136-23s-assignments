@@ -55,14 +55,27 @@ if __name__ == '__main__':
     n_train_list[-1] = len(train_word_list) # largest size = all train data
 
     # Preallocate arrays to store the scores for each estimator
-    mle_scores = -7.5 + np.zeros_like(frac_train_list)
-    map_scores = -8.0 + np.zeros_like(frac_train_list)
-    ppe_scores = -8.5 + np.zeros_like(frac_train_list)
+    mle_scores = np.zeros_like(frac_train_list)
+    map_scores = np.zeros_like(frac_train_list)
+    ppe_scores = np.zeros_like(frac_train_list)
 
-    # TODO loop over all train set sizes in `n_train_list`
-    # ---- fit ML Estimator on train, then score it on test set
-    # ---- fit MAP Estimator on train, then score it on test set
-    # ---- fit PosteriorPredictive Estimator on train, then score it on test set
+    mle = MLEstimator(vocab, epsilon_unseen_proba=0.00001)
+    mapEst = MAPEstimator(vocab, alpha=1.001)
+    ppe = PosteriorPredictiveEstimator(vocab, alpha=1.001)
+
+    # loop over all train set sizes in `n_train_list`
+    i = 0
+    for size in n_train_list:
+        # ---- fit ML Estimator on train, then score it on test set
+        mle.fit(train_word_list[0:size-1])
+        mle_scores[i] = mle.score(test_word_list)
+        # ---- fit MAP Estimator on train, then score it on test set
+        mapEst.fit(train_word_list[0:size-1])
+        map_scores[i] = mapEst.score(test_word_list)
+        # ---- fit PosteriorPredictive Estimator on train, then score it on test set
+        ppe.fit(train_word_list[0:size-1])
+        ppe_scores[i] = ppe.score(test_word_list)
+        i += 1
 
     fig_h, ax_h = plt.subplots(nrows=1, ncols=1, squeeze=True, figsize=(6, 4))
     arange_list = np.arange(len(n_train_list))
@@ -75,8 +88,8 @@ if __name__ == '__main__':
     ax_h.set_xlim([-0.05, 1.05*max(arange_list)])
     ax_h.set_ylim([-10.1, -6.6])
 
-    plt.xlabel("TODO fill xlabel")
-    plt.ylabel("TODO fill ylabel")
+    plt.xlabel("Amount of training data")
+    plt.ylabel("Per word log probability")
     plt.legend(loc='lower right')
     plt.tight_layout();
     plt.show()
