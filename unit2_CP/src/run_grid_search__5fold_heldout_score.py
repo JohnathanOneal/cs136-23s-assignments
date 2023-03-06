@@ -72,12 +72,12 @@ if __name__ == '__main__':
                 cv=kfold_splitter, refit=True, 
                 scoring=None, return_train_score=True)
 
-            # TODO Perform grid search on first N train points
             # Hint: call a method already provided by kfold_grid_searcher
+            kfold_grid_searcher.fit(x_train_ND[1:(N+1)], t_train_N[1:(N+1)])
 
             ## Select best scoring parameters
-            best_score = 0.0 # TODO FIXME get searcher's best score
-            best_estimator = default_estimator # TODO FIXME get searcher's best
+            best_score = kfold_grid_searcher.best_score_
+            best_estimator = kfold_grid_searcher.best_estimator_
 
             estimator_per_order.append(best_estimator)
             score_per_order.append(best_score)            
@@ -128,8 +128,8 @@ if __name__ == '__main__':
 
 
     ## Finalize figure 2b
-    plt.xlabel('TODO fixme')
-    plt.ylabel('TODO fixme') 
+    plt.xlabel('polynomial feature order')
+    plt.ylabel('heldout score')
     plt.legend(loc='upper left')
     plt.ylim([-1.4, 0.1]) # don't touch these, should be just fine
     plt.tight_layout()

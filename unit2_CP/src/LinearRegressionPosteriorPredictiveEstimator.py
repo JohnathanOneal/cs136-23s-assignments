@@ -88,9 +88,11 @@ class LinearRegressionPosteriorPredictiveEstimator():
         self. Internal attributes updated.
         '''
         phi_NM = self.feature_transformer.transform(x_ND)
-        ## TODO update mean_M and precision_MM via Bishop PRML formulas 
-        self.mean_M = np.zeros(self.M)
-        self.precision_MM = np.zeros((self.M, self.M))
+        N, M = phi_NM.shape
+        self.precision_MM = np.linalg.inv(
+            (self.alpha * np.eye(M) + self.beta * np.matmul(np.transpose(phi_NM), phi_NM)))
+        self.mean_M = np.matmul(self.beta*self.precision_MM, np.matmul(np.transpose(phi_NM), t_N))
+
         return self
 
     def predict(self, x_ND):
@@ -110,8 +112,8 @@ class LinearRegressionPosteriorPredictiveEstimator():
         '''
         phi_NM = self.feature_transformer.transform(x_ND)
         N, M = phi_NM.shape
-        ## TODO compute mean of predictive
-        return np.zeros(N)
+        pred_mean = np.matmul(np.transpose(self.mean_M), np.transpose(phi_NM))
+        return pred_mean
 
     def predict_variance(self, x_ND):
         ''' Make predictions of output variance for each provided input feature vectors
@@ -130,8 +132,8 @@ class LinearRegressionPosteriorPredictiveEstimator():
         '''
         phi_NM = self.feature_transformer.transform(x_ND)
         N, M = phi_NM.shape
-        ## TODO compute variance of predictive
-        return 0.1 * np.ones(N)
+        pred_var = (1/self.beta) + np.matmul(np.matmul(phi_NM, self.precision_MM), np.transpose(phi_NM))
+        return pred_var
 
     def score(self, x_ND, t_N):
         ''' Compute the average log probability of provided dataset
